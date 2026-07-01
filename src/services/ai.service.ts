@@ -27,8 +27,11 @@ export const generateAIResponse = async (prompt: string): Promise<string> => {
 
 export const generateChatResponse = async (history: any[], userContext: string): Promise<string> => {
     try {
-
-        const contents = history;
+        // Explicitly map to the structure: { role: "model" | "user", parts: [{ text: "..." }] }
+        const contents = history.map((msg: any) => ({
+            role: msg.role === 'ai' || msg.role === 'model' ? 'model' : 'user',
+            parts: [{ text: msg.parts?.[0]?.text || msg.text || msg.content || "" }]
+        })).filter(m => m.parts[0].text.length > 0); // Drop empty messages entirely
 
         const response = await ai.models.generateContent({
             model: 'gemini-2.5-flash',
@@ -41,7 +44,7 @@ export const generateChatResponse = async (history: any[], userContext: string):
             }
         });
 
-
+        // The response structure from the SDK requires accessing the text property correctly
         if (!response.text) throw new Error('AI returned an empty response.');
         return response.text;
     } catch (error: any) {
