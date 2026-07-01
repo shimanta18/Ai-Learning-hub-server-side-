@@ -3,9 +3,7 @@ import { generateAIResponse, generateChatResponse, generateSmartRecommendations 
 import { User } from '../models/User';
 import Course from '../models/Course';
 
-/**
- * Handles basic single-prompt queries
- */
+
 export const askGeminiController = async (req: Request, res: Response) => {
     try {
         const { prompt } = req.body;
@@ -20,32 +18,30 @@ export const askGeminiController = async (req: Request, res: Response) => {
     }
 };
 
-/**
- * Handles context-aware chat assistant with strict Gemini formatting
- */
+
 export const chatController = async (req: Request | any, res: Response) => {
     try {
         const { message, history } = req.body;
         const userEmail = req.user?.email || 'Unknown User';
 
-        // 1. Safely map past history to ensure strict Gemini SDK alignment
+
         const formattedHistory = (history || []).map((m: any) => ({
-            // Convert 'ai' role to 'model' dynamically
+
             role: m.role === 'ai' || m.role === 'model' ? 'model' : 'user',
-            // Fallback safely whether frontend passed an array of parts or raw content string
+
             parts: m.parts ? m.parts : [{ text: m.content || '' }]
         }));
 
-        // 2. Append the newest message using the exact schema Gemini expects
+
         const fullHistory = [
             ...formattedHistory,
             { role: 'user', parts: [{ text: message }] }
         ];
 
-        // Mocking user context for now
+
         const userContext = `The user's email is ${userEmail}. They are studying computer science and web development.`;
 
-        // 3. Pass the fully sanitized history to your service layer
+
         const reply = await generateChatResponse(fullHistory, userContext);
 
         res.status(200).json({ success: true, reply });
@@ -54,9 +50,8 @@ export const chatController = async (req: Request | any, res: Response) => {
     }
 };
 
-/**
- * Handles generating smart course recommendations from live MongoDB data
- */
+
+
 export const recommendationsController = async (req: Request | any, res: Response) => {
     try {
         const firebaseUid = req.user?.uid;
