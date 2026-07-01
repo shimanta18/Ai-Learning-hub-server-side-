@@ -3,7 +3,6 @@ import { generateAIResponse, generateChatResponse, generateSmartRecommendations 
 import { User } from '../models/User';
 import Course from '../models/Course';
 
-
 export const askGeminiController = async (req: Request, res: Response) => {
     try {
         const { prompt } = req.body;
@@ -18,39 +17,38 @@ export const askGeminiController = async (req: Request, res: Response) => {
     }
 };
 
-
 export const chatController = async (req: Request | any, res: Response) => {
     try {
         const { message, history } = req.body;
         const userEmail = req.user?.email || 'Unknown User';
 
 
-        const formattedHistory = (history || []).map((m: any) => ({
+        const formattedHistory = (history || [])
+            .map((m: any) => {
 
-            role: m.role === 'ai' || m.role === 'model' ? 'model' : 'user',
+                const extractedText = m.text || m.message || m.content || (Array.isArray(m.parts) && m.parts[0]?.text) || '';
 
-            parts: m.parts ? m.parts : [{ text: m.content || '' }]
-        }));
+                return {
+                    role: m.role === 'ai' || m.role === 'model' || m.role === 'assistant' ? 'model' : 'user',
+                    parts: [{ text: extractedText.toString().trim() }]
+                };
+            })
 
+            .filter((m: any) => m.parts[0].text !== '');
 
         const fullHistory = [
             ...formattedHistory,
             { role: 'user', parts: [{ text: message }] }
         ];
 
-
         const userContext = `The user's email is ${userEmail}. They are studying computer science and web development.`;
 
-
         const reply = await generateChatResponse(fullHistory, userContext);
-
         res.status(200).json({ success: true, reply });
     } catch (error: any) {
         res.status(500).json({ success: false, message: error.message });
     }
 };
-
-
 
 export const recommendationsController = async (req: Request | any, res: Response) => {
     try {
