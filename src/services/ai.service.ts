@@ -24,15 +24,11 @@ export const generateAIResponse = async (prompt: string): Promise<string> => {
     }
 };
 
-/**
- * Handles context-aware chat by sending history and system instructions.
- */
+
 export const generateChatResponse = async (history: any[], userContext: string): Promise<string> => {
     try {
-        const contents = history.map((msg: any) => ({
-            role: msg.role === 'ai' ? 'model' : 'user',
-            parts: [{ text: msg.content }]
-        }));
+
+        const contents = history;
 
         const response = await ai.models.generateContent({
             model: 'gemini-2.5-flash',
@@ -45,6 +41,7 @@ export const generateChatResponse = async (history: any[], userContext: string):
             }
         });
 
+
         if (!response.text) throw new Error('AI returned an empty response.');
         return response.text;
     } catch (error: any) {
@@ -53,9 +50,7 @@ export const generateChatResponse = async (history: any[], userContext: string):
     }
 };
 
-/**
- * Generates smart recommendations and forces a strict JSON array output.
- */
+
 export const generateSmartRecommendations = async (completedCourses: string[], catalog: any[]): Promise<any> => {
     try {
         // Compress catalog data down to key variables to keep the prompt clean and context-focused
