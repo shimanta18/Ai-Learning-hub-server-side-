@@ -6,7 +6,7 @@ export interface AuthenticatedRequest extends Request {
     user?: DecodedIdToken;
 }
 
-// 1. Your existing validation middleware
+
 export const verifyFirebaseToken = async (
     req: AuthenticatedRequest,
     res: Response,
@@ -16,8 +16,14 @@ export const verifyFirebaseToken = async (
     if (!authHeader || !authHeader.startsWith('Bearer ')) {
         return res.status(401).json({ success: false, message: 'Unauthorized access token missing' });
     }
-    const token = authHeader.split(' ')[1] as string;
+    const token = authHeader.split(' ')[1];
 
+    if (!token || token === 'undefined' || token === 'null') {
+        return res.status(401).json({
+            success: false,
+            message: 'Unauthorized: Session token is uninitialized or malformed'
+        });
+    }
     try {
         const decodedToken = await getAuth().verifyIdToken(token);
         req.user = decodedToken;
@@ -28,13 +34,13 @@ export const verifyFirebaseToken = async (
     }
 };
 
-// 2. NEW: Admin verification middleware using Custom Claims
+
 export const isAdmin = (
     req: AuthenticatedRequest,
     res: Response,
     next: NextFunction
 ) => {
-    // Ensure user was decoded by the verifyFirebaseToken middleware first
+
     if (!req.user) {
         return res.status(401).json({ success: false, message: 'Authentication required' });
     }

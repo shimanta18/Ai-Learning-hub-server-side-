@@ -34,7 +34,7 @@ export const generateChatResponse = async (history: any[], userContext: string):
         })).filter(m => m.parts[0].text.length > 0); // Drop empty messages entirely
 
         const response = await ai.models.generateContent({
-            model: 'gemini-2.5-flash',
+            model: 'gemini-flash-lite-latest',
             contents: contents,
             config: {
                 systemInstruction: `You are the official AI Learning Assistant for LearningHub. 
@@ -75,7 +75,7 @@ export const generateSmartRecommendations = async (completedCourses: string[], c
         `;
 
         const response = await ai.models.generateContent({
-            model: 'gemini-2.5-flash',
+            model: 'gemini-flash-lite-latest',
             contents: prompt,
             config: {
                 responseMimeType: "application/json",
