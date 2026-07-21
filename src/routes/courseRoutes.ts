@@ -1,6 +1,5 @@
 import { Router, Response } from 'express';
 import Course from '../models/Course';
-// Import your custom middleware and authenticated request interface
 import { verifyFirebaseToken, isAdmin, AuthenticatedRequest } from '../middlewares/auth.middleware';
 
 const router = Router();
@@ -9,10 +8,12 @@ const router = Router();
 // @route   GET /api/v1/courses
 router.get('/', async (req: AuthenticatedRequest, res: Response) => {
     try {
+        // TypeScript now automatically knows Course returns ICourse[]
         const courses = await Course.find({}).sort({ createdAt: -1 });
 
-        const formattedCourses = courses.map((course: any) => ({
+        const formattedCourses = courses.map((course) => ({
             id: course._id.toString(),
+            _id: course._id.toString(),
             category: course.category,
             level: course.level,
             initials: course.initials,
@@ -37,6 +38,7 @@ router.get('/', async (req: AuthenticatedRequest, res: Response) => {
 router.get('/:id', async (req: AuthenticatedRequest, res: Response) => {
     try {
         const { id } = req.params;
+        // Inferred as ICourse | null without needing ': any'
         const course = await Course.findById(id);
 
         if (!course) {
@@ -45,6 +47,7 @@ router.get('/:id', async (req: AuthenticatedRequest, res: Response) => {
 
         const formattedCourse = {
             id: course._id.toString(),
+            _id: course._id.toString(),
             category: course.category,
             level: course.level,
             initials: course.initials,
@@ -55,7 +58,8 @@ router.get('/:id', async (req: AuthenticatedRequest, res: Response) => {
             duration: course.duration,
             students: course.students,
             price: course.price,
-            numericPrice: course.numericPrice
+            numericPrice: course.numericPrice,
+            lessons: course.lessons || []
         };
 
         res.status(200).json(formattedCourse);
@@ -68,9 +72,8 @@ router.get('/:id', async (req: AuthenticatedRequest, res: Response) => {
 // @route   POST /api/v1/courses
 router.post('/', verifyFirebaseToken, isAdmin, async (req: AuthenticatedRequest, res: Response) => {
     try {
-        const { title, category, level, description, duration, price, numericPrice } = req.body;
+        const { title, category, level, description, duration, price, numericPrice, lessons } = req.body;
 
-        // Auto-generate initials from the title (e.g., "React Native" -> "RN")
         const initials = title
             ? title.split(' ').map((word: string) => word[0]).join('').toUpperCase().slice(0, 3)
             : 'CD';
@@ -84,9 +87,10 @@ router.post('/', verifyFirebaseToken, isAdmin, async (req: AuthenticatedRequest,
             duration,
             price,
             numericPrice,
-            rating: 0,   // Default new courses to 0 rating
-            reviews: 0,  // Default new courses to 0 reviews
-            students: 0  // Default new courses to 0 students
+            lessons: lessons || [],
+            rating: 0,
+            reviews: 0,
+            students: 0
         });
 
         const savedCourse = await newCourse.save();
@@ -96,6 +100,7 @@ router.post('/', verifyFirebaseToken, isAdmin, async (req: AuthenticatedRequest,
             message: 'Course created successfully',
             data: {
                 id: savedCourse._id.toString(),
+                _id: savedCourse._id.toString(),
                 ...savedCourse.toObject()
             }
         });

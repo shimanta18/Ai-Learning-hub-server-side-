@@ -5,6 +5,7 @@ export interface IUser extends Document {
     firebaseUid: string;
     email: string;
     role: 'User' | 'Admin';
+    displayName?: string;
     createdAt: Date;
 }
 
@@ -24,6 +25,10 @@ const userSchema = new Schema<IUser>({
         type: String,
         enum: ['User', 'Admin'],
         default: 'User' // New signups default to normal users safely
+    },
+    displayName: {
+        type: String,
+        trim: true,
     },
     createdAt: {
         type: Date,

@@ -1,18 +1,53 @@
-const mongoose = require('mongoose');
+import mongoose, { Schema, Document, Model } from 'mongoose';
 
-const CourseSchema = new mongoose.Schema({
+export interface ILesson {
+    title: string;
+    description?: string;
+    youtubeVideoId: string;
+    duration?: string;
+    transcript?: string;
+}
+
+export interface ICourse extends Document {
+    title: string;
+    category: string;
+    level: string;
+    initials: string;
+    description: string;
+    rating: number;
+    reviews: number;
+    duration: string;
+    students: number;
+    price: string;
+    numericPrice: number;
+    lessons?: ILesson[]; // ✅ Strongly typed with ILesson instead of any[]
+}
+
+const LessonSchema = new Schema<ILesson>({
+    title: { type: String, required: true },
+    description: { type: String },
+    youtubeVideoId: { type: String, required: true },
+    duration: { type: String },
+    transcript: { type: String }
+});
+
+const CourseSchema = new Schema<ICourse>({
     category: { type: String, required: true },
-    level: { type: String, enum: ['Beginner', 'Intermediate', 'Advanced'], required: true },
-    initials: { type: String, required: true },
+    level: { type: String, required: true },
+    initials: { type: String },
     title: { type: String, required: true },
     description: { type: String, required: true },
-    rating: { type: Number, default: 4.5 },
+    rating: { type: Number, default: 0 },
     reviews: { type: Number, default: 0 },
     duration: { type: String, required: true },
     students: { type: Number, default: 0 },
     price: { type: String, required: true },
-    numericPrice: { type: Number, required: true }
+    numericPrice: { type: Number, required: true },
+    lessons: [LessonSchema] // ✅ Uses embedded subdocument schema for proper validation
 }, { timestamps: true });
 
-const Course = mongoose.model('Course', CourseSchema);
+// ✅ Explicitly type as Model<ICourse> so Mongoose methods (find, findById) are recognized everywhere
+const Course: Model<ICourse> =
+    mongoose.models.Course || mongoose.model<ICourse>('Course', CourseSchema);
+
 export default Course;
