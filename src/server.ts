@@ -24,8 +24,7 @@ app.use(express.json());
 // 2. Dynamic CORS Configuration
 const allowedOrigins = process.env.ALLOWED_ORIGINS
     ? process.env.ALLOWED_ORIGINS.split(',').map(origin => origin.trim())
-    : ['http://localhost:3000'];
-
+    : ['http://localhost:3000', 'https://ai-learning-hub-client-server.vercel.app']
 app.use(cors({
     origin: (origin, callback) => {
         // Allow requests with no origin (like mobile apps or local server-to-server tools)
