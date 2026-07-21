@@ -20,7 +20,8 @@ export interface ICourse extends Document {
     students: number;
     price: string;
     numericPrice: number;
-    lessons?: ILesson[]; // ✅ Strongly typed with ILesson instead of any[]
+    youtubeVideoId?: string;
+    lessons?: ILesson[];
 }
 
 const LessonSchema = new Schema<ILesson>({
@@ -43,10 +44,10 @@ const CourseSchema = new Schema<ICourse>({
     students: { type: Number, default: 0 },
     price: { type: String, required: true },
     numericPrice: { type: Number, required: true },
-    lessons: [LessonSchema] // ✅ Uses embedded subdocument schema for proper validation
+    youtubeVideoId: { type: String, required: false },
+    lessons: [LessonSchema]
 }, { timestamps: true });
 
-// ✅ Explicitly type as Model<ICourse> so Mongoose methods (find, findById) are recognized everywhere
 const Course: Model<ICourse> =
     mongoose.models.Course || mongoose.model<ICourse>('Course', CourseSchema);
 
