@@ -26,7 +26,7 @@ export interface ICourse extends Document {
 const LessonSchema = new Schema<ILesson>({
     title: { type: String, required: true },
     description: { type: String },
-    youtubeVideoId: { type: String, required: true },
+    youtubeVideoId: { type: String, required: false },
     duration: { type: String },
     transcript: { type: String }
 });
