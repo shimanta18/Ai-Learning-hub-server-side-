@@ -13,7 +13,7 @@ import { authRoutes } from './routes/auth.routes';
 import aiRoutes from './routes/ai.routes';
 import courseRoutes from './routes/courseRoutes';
 import adminRoutes from './routes/admin.routes';
-
+import plannerRoutes from './routes/planner.routes';
 const app: Application = express();
 const PORT = process.env.PORT || 5000;
 
@@ -27,7 +27,7 @@ const allowedOrigins = process.env.ALLOWED_ORIGINS
     : ['http://localhost:3000', 'https://ai-learning-hub-client-server.vercel.app']
 app.use(cors({
     origin: (origin, callback) => {
-        // Allow requests with no origin (like mobile apps or local server-to-server tools)
+        // Allow requests with no origin ( mobile apps or local server-to-server tools)
         if (!origin) return callback(null, true);
 
         // Check if the incoming origin exists in our allowed list
@@ -43,6 +43,7 @@ app.use(cors({
 // 3. Application API Routes
 app.use('/api/v1/auth', authRoutes);
 app.use('/api/v1/ai', aiRoutes);
+app.use('/api/v1/planner', plannerRoutes);
 app.use('/api/v1/courses', courseRoutes);
 app.use('/api/v1/admin', adminRoutes);
 
