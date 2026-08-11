@@ -1,35 +1,40 @@
 import { Router, Response } from 'express';
+import mongoose from 'mongoose';
 import Course from '../models/Course';
 import { verifyFirebaseToken, isAdmin, AuthenticatedRequest } from '../middlewares/auth.middleware';
 
 const router = Router();
 
-// @desc    Get all courses from MongoDB (PUBLIC)
+// @desc    Get all courses (PUBLIC)
 // @route   GET /api/v1/courses
 router.get('/', async (req: AuthenticatedRequest, res: Response) => {
     try {
-        // TypeScript now automatically knows Course returns ICourse[]
-        const courses = await Course.find({}).sort({ createdAt: -1 });
 
-        const formattedCourses = courses.map((course) => ({
-            id: course._id.toString(),
-            _id: course._id.toString(),
-            category: course.category,
-            level: course.level,
-            initials: course.initials,
-            title: course.title,
-            description: course.description,
-            rating: course.rating,
-            reviews: course.reviews,
-            duration: course.duration,
-            students: course.students,
-            price: course.price,
-            numericPrice: course.numericPrice
-        }));
+        const courses = await Course.find({}).sort({ createdAt: -1 }).lean();
 
-        res.status(200).json(formattedCourses);
+        const formattedCourses = courses.map((course: any) => {
+
+            const courseId = course._id ? course._id.toString() : course.id || '';
+
+            return {
+                ...course,
+                id: courseId,
+                _id: courseId,
+                lessons: course.lessons || []
+            };
+        });
+
+        res.status(200).json({
+            success: true,
+            count: formattedCourses.length,
+            data: formattedCourses
+        });
     } catch (error: any) {
-        res.status(500).json({ message: 'Server Error fetching courses', error: error.message });
+        res.status(500).json({
+            success: false,
+            message: 'Server Error fetching courses',
+            error: error.message
+        });
     }
 });
 
@@ -38,33 +43,27 @@ router.get('/', async (req: AuthenticatedRequest, res: Response) => {
 router.get('/:id', async (req: AuthenticatedRequest, res: Response) => {
     try {
         const { id } = req.params;
-        // Inferred as ICourse | null without needing ': any'
-        const course = await Course.findById(id);
+
+        if (!mongoose.Types.ObjectId.isValid(id as string)) {
+            return res.status(400).json({ success: false, message: 'Invalid Course ID format' });
+        }
+
+        const course = await Course.findById(id).lean();
 
         if (!course) {
             return res.status(404).json({ success: false, message: 'Course not found' });
         }
 
-        const formattedCourse = {
-            id: course._id.toString(),
-            _id: course._id.toString(),
-            category: course.category,
-            level: course.level,
-            initials: course.initials,
-            title: course.title,
-            description: course.description,
-            rating: course.rating,
-            reviews: course.reviews,
-            duration: course.duration,
-            students: course.students,
-            price: course.price,
-            numericPrice: course.numericPrice,
-            lessons: course.lessons || []
-        };
-
-        res.status(200).json(formattedCourse);
+        res.status(200).json({
+            success: true,
+            data: {
+                ...course,
+                id: course._id.toString(),
+                _id: course._id.toString()
+            }
+        });
     } catch (error: any) {
-        res.status(500).json({ success: false, message: 'Server Error fetching course details', error: error.message });
+        res.status(500).json({ success: false, message: 'Server error fetching course details', error: error.message });
     }
 });
 
@@ -72,25 +71,20 @@ router.get('/:id', async (req: AuthenticatedRequest, res: Response) => {
 // @route   POST /api/v1/courses
 router.post('/', verifyFirebaseToken, isAdmin, async (req: AuthenticatedRequest, res: Response) => {
     try {
-        const { title, category, level, description, duration, price, numericPrice, lessons } = req.body;
+        // Extract ONLY the fields that exist in your new database structure
+        const { title, description, category, thumbnailUrl, lessons } = req.body;
 
-        const initials = title
-            ? title.split(' ').map((word: string) => word[0]).join('').toUpperCase().slice(0, 3)
-            : 'CD';
+        if (!title || !description || !category) {
+            return res.status(400).json({ success: false, message: 'Please provide title, description, and category' });
+        }
 
         const newCourse = new Course({
-            category,
-            level,
-            initials,
             title,
             description,
-            duration,
-            price,
-            numericPrice,
-            lessons: lessons || [],
-            rating: 0,
-            reviews: 0,
-            students: 0
+            category,
+            thumbnailUrl,
+            lessons: lessons || []
+
         });
 
         const savedCourse = await newCourse.save();
@@ -99,9 +93,9 @@ router.post('/', verifyFirebaseToken, isAdmin, async (req: AuthenticatedRequest,
             success: true,
             message: 'Course created successfully',
             data: {
+                ...savedCourse.toObject(),
                 id: savedCourse._id.toString(),
-                _id: savedCourse._id.toString(),
-                ...savedCourse.toObject()
+                _id: savedCourse._id.toString()
             }
         });
     } catch (error: any) {
@@ -114,16 +108,20 @@ router.post('/', verifyFirebaseToken, isAdmin, async (req: AuthenticatedRequest,
 router.delete('/:id', verifyFirebaseToken, isAdmin, async (req: AuthenticatedRequest, res: Response) => {
     try {
         const { id } = req.params;
-        const course = await Course.findById(id);
 
-        if (!course) {
+        if (!mongoose.Types.ObjectId.isValid(id as string)) {
+            return res.status(400).json({ success: false, message: 'Invalid Course ID format' });
+        }
+
+        const deletedCourse = await Course.findByIdAndDelete(id);
+
+        if (!deletedCourse) {
             return res.status(404).json({ success: false, message: 'Course not found' });
         }
 
-        await course.deleteOne();
         res.status(200).json({ success: true, message: 'Course deleted successfully' });
     } catch (error: any) {
-        res.status(500).json({ success: false, message: 'Server Error deleting course', error: error.message });
+        res.status(500).json({ success: false, message: 'Server error deleting course', error: error.message });
     }
 });
 
