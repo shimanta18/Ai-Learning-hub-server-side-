@@ -44,9 +44,7 @@ router.get('/:id', async (req: AuthenticatedRequest, res: Response) => {
     try {
         const { id } = req.params;
 
-        if (!mongoose.Types.ObjectId.isValid(id as string)) {
-            return res.status(400).json({ success: false, message: 'Invalid Course ID format' });
-        }
+
 
         const course = await Course.findById(id).lean();
 
@@ -109,9 +107,7 @@ router.delete('/:id', verifyFirebaseToken, isAdmin, async (req: AuthenticatedReq
     try {
         const { id } = req.params;
 
-        if (!mongoose.Types.ObjectId.isValid(id as string)) {
-            return res.status(400).json({ success: false, message: 'Invalid Course ID format' });
-        }
+
 
         const deletedCourse = await Course.findByIdAndDelete(id);
 
