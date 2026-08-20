@@ -7,34 +7,35 @@ const router = Router();
 
 // @desc    Get all courses (PUBLIC)
 // @route   GET /api/v1/courses
-router.get('/', async (req: AuthenticatedRequest, res: Response) => {
+router.get('/:id', async (req: AuthenticatedRequest, res: Response) => {
     try {
+        const { id } = req.params;
+        let course = null;
 
-        const courses = await Course.find({}).sort({ createdAt: -1 }).lean();
 
-        const formattedCourses = courses.map((course: any) => {
+        if (mongoose.Types.ObjectId.isValid(id as string) && String(id).length === 24) {
+            course = await Course.findById(id).lean();
+        } else {
+            // 2. It is a custom string like "course_021". 
+            // We use Course.collection.findOne() to bypass Mongoose's strict schema 
+            // casting, which would otherwise throw a CastError.
+            course = await Course.collection.findOne({ _id: id as any });
+        }
 
-            const courseId = course._id ? course._id.toString() : course.id || '';
-
-            return {
-                ...course,
-                id: courseId,
-                _id: courseId,
-                lessons: course.lessons || []
-            };
-        });
+        if (!course) {
+            return res.status(404).json({ success: false, message: 'Course not found' });
+        }
 
         res.status(200).json({
             success: true,
-            count: formattedCourses.length,
-            data: formattedCourses
+            data: {
+                ...course,
+                id: course._id.toString(),
+                _id: course._id.toString()
+            }
         });
     } catch (error: any) {
-        res.status(500).json({
-            success: false,
-            message: 'Server Error fetching courses',
-            error: error.message
-        });
+        res.status(500).json({ success: false, message: 'Server error fetching course details', error: error.message });
     }
 });
 
