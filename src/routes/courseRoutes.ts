@@ -7,6 +7,27 @@ const router = Router();
 
 // @desc    Get all courses (PUBLIC)
 // @route   GET /api/v1/courses
+router.get('/', async (req, res) => {
+    try {
+        // Fetch all courses from the database
+        const courses = await Course.find().lean();
+
+        res.status(200).json({
+            success: true,
+            count: courses.length,
+            data: courses
+        });
+    } catch (error: any) {
+        res.status(500).json({
+            success: false,
+            message: 'Server error fetching courses',
+            error: error.message
+        });
+    }
+});
+
+// @desc    Get all courses (PUBLIC)
+// @route   GET /api/v1/courses
 router.get('/:id', async (req: AuthenticatedRequest, res: Response) => {
     try {
         const { id } = req.params;
@@ -41,30 +62,8 @@ router.get('/:id', async (req: AuthenticatedRequest, res: Response) => {
 
 // @desc    Get a single course by ID (PUBLIC)
 // @route   GET /api/v1/courses/:id
-router.get('/:id', async (req: AuthenticatedRequest, res: Response) => {
-    try {
-        const { id } = req.params;
 
 
-
-        const course = await Course.findById(id).lean();
-
-        if (!course) {
-            return res.status(404).json({ success: false, message: 'Course not found' });
-        }
-
-        res.status(200).json({
-            success: true,
-            data: {
-                ...course,
-                id: course._id.toString(),
-                _id: course._id.toString()
-            }
-        });
-    } catch (error: any) {
-        res.status(500).json({ success: false, message: 'Server error fetching course details', error: error.message });
-    }
-});
 
 // @desc    Create a new course (ADMIN ONLY)
 // @route   POST /api/v1/courses
